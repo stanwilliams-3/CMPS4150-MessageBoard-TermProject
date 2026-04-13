@@ -1,0 +1,35 @@
+<%- include('layouts/main', { title: typeof title !== 'undefined' ? title : 'Topics', user: typeof user !== 'undefined' ? user : null }) %>
+
+<h1 class="page-title">Topics</h1>
+<p class="page-intro">Subscribe to a topic to see it on your <a href="/">home</a> feed.</p>
+
+<% if (typeof flash !== 'undefined' && flash) { %>
+  <p class="panel" role="status"><%= flash %></p>
+<% } %>
+
+<% const list = typeof topics !== 'undefined' && topics ? topics : []; %>
+<% if (!list.length) { %>
+  <div class="panel">
+    <p class="empty-hint">No topics are available yet.</p>
+  </div>
+<% } else { %>
+  <div class="panel">
+    <% list.forEach(function (t) { %>
+      <div class="topic-row">
+        <h2 class="topic-row__title"><%= t.title %></h2>
+        <div>
+          <% if (t.isSubscribed) { %>
+            <span class="empty-hint" style="margin-right:0.5rem;">Subscribed</span>
+          <% } else { %>
+            <form method="post" action="/subscriptions/subscribe" style="display:inline;">
+              <input type="hidden" name="topicId" value="<%= t.topicId %>">
+              <button type="submit" class="btn btn--primary btn--small">Subscribe</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+<% } %>
+
+<%- include('layouts/end') %>

@@ -1,0 +1,48 @@
+<%- include('layouts/main', { title: typeof title !== 'undefined' ? title : 'Home', user: typeof user !== 'undefined' ? user : null }) %>
+
+<h1 class="page-title">Your subscriptions</h1>
+<p class="page-intro">
+  Two most recent messages per subscribed topic.
+  <a href="/topics">Browse topics to subscribe</a>
+</p>
+
+<% if (typeof flash !== 'undefined' && flash) { %>
+  <p class="panel" role="status"><%= flash %></p>
+<% } %>
+
+<% const blocks = typeof topicsBlock !== 'undefined' && topicsBlock ? topicsBlock : []; %>
+<% if (!blocks.length) { %>
+  <div class="panel">
+    <p class="empty-hint">You are not subscribed to any topics yet. Open <a href="/topics">Browse topics</a> to subscribe.</p>
+  </div>
+<% } else { %>
+  <% blocks.forEach(function (block) { %>
+    <section class="panel" aria-labelledby="topic-<%= block.topicId %>">
+      <div class="panel__head">
+        <h2 class="panel__title" id="topic-<%= block.topicId %>"><%= block.topicTitle %></h2>
+        <form method="post" action="/subscriptions/unsubscribe" onsubmit="return confirm('Unsubscribe from this topic?');">
+          <input type="hidden" name="topicId" value="<%= block.topicId %>">
+          <button type="submit" class="btn btn--danger btn--small">Unsubscribe</button>
+        </form>
+      </div>
+      <% const msgs = block.messages && block.messages.length ? block.messages : []; %>
+      <% if (!msgs.length) { %>
+        <p class="empty-hint">No messages yet in this topic.</p>
+      <% } else { %>
+        <% msgs.forEach(function (m) { %>
+          <article class="msg">
+            <div class="msg__meta">
+              <%= m.authorName %>
+              <% if (m.createdAt) { %>
+                · <%= new Date(m.createdAt).toLocaleString() %>
+              <% } %>
+            </div>
+            <p class="msg__body"><%= m.body %></p>
+          </article>
+        <% }); %>
+      <% } %>
+    </section>
+  <% }); %>
+<% } %>
+
+<%- include('layouts/end') %>
