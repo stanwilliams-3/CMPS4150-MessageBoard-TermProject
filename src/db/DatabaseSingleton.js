@@ -20,9 +20,9 @@ export class DatabaseSingleton {
   async getDb() {
     if (this.db) return this.db;
 
-    const uri = process.env.MONGODB_URI?.trim();
+    const uri = process.env.MONGO_URI?.trim();
     if (!uri) {
-      throw new Error("MONGODB_URI is not set. Copy .env.example to .env.");
+      throw new Error("MONGO_URI is not set. Copy .env.example to .env.");
     }
     const name = (process.env.DB_NAME || "message_board").trim();
 
