@@ -1,11 +1,12 @@
-import { ObjectId } from "mongodb";
+import { DriverObjectId } from "../db/driverObjectId.js";
 import { MessageModel } from "../models/MessageModel.js";
 import { SubscriptionModel } from "../models/SubscriptionModel.js";
+import { TopicModel } from "../models/TopicModel.js";
+import { appEventBus, AppEvents } from "../observers/AppEventBus.js";
 
 export const messageController = {
   async create(req, res, next) {
     try {
-    
       const userIdRaw = req.session?.userId;
       if (!userIdRaw) {
         return res.redirect("/auth/login");
@@ -13,15 +14,14 @@ export const messageController = {
 
       let userId;
       try {
-        userId = new ObjectId(String(userIdRaw));
+        userId = new DriverObjectId(String(userIdRaw));
       } catch {
         return res.status(500).send("Session user id is invalid.");
       }
 
-
       let topicId;
       try {
-        topicId = new ObjectId(String(req.params.topicId));
+        topicId = new DriverObjectId(String(req.params.topicId));
       } catch {
         return res.status(400).send("Invalid topic id.");
       }
@@ -36,9 +36,15 @@ export const messageController = {
         return res.status(403).send("You are not subscribed to this topic.");
       }
 
-      await MessageModel.insert(topicId, userId, text);
+      const messageId = await MessageModel.insert(topicId, userId, text);
+      await TopicModel.incrementAccess(topicId);
+      appEventBus.publish(AppEvents.MESSAGE_CREATED, {
+        messageId: String(messageId),
+        topicId: String(topicId),
+        userId: String(userId),
+      });
 
-      res.redirect("/");
+      res.redirect(`/?flash=${encodeURIComponent("Message posted.")}`);
     } catch (err) {
       next(err);
     }

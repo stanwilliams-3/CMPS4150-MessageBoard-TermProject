@@ -1,43 +1,16 @@
 import User from "../models/User.js";
+import { layoutPage } from "../html/layout.js";
+import { loginMainHtml, registerMainHtml } from "../html/pageTemplates.js";
+import { appEventBus, AppEvents } from "../observers/AppEventBus.js";
 
 export const showRegisterPage = (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Register</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          max-width: 500px;
-          margin: 40px auto;
-          padding: 20px;
-        }
-        form {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        input, button {
-          padding: 10px;
-          font-size: 16px;
-        }
-        a {
-          text-decoration: none;
-        }
-      </style>
-    </head>
-    <body>
-      <h1>Register</h1>
-      <form method="POST" action="/auth/register">
-        <input type="text" name="username" placeholder="Username" required />
-        <input type="password" name="password" placeholder="Password" required />
-        <button type="submit">Register</button>
-      </form>
-      <p><a href="/auth/login">Already have an account? Login</a></p>
-    </body>
-    </html>
-  `);
+  res.type("html").send(
+    layoutPage({
+      title: "Register",
+      user: null,
+      mainHtml: registerMainHtml({}),
+    })
+  );
 };
 
 export const register = async (req, res) => {
@@ -45,30 +18,43 @@ export const register = async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.send(`
-        <h2>Username and password are required.</h2>
-        <a href="/auth/register">Go back</a>
-      `);
+      return res.status(400).type("html").send(
+        layoutPage({
+          title: "Register",
+          user: null,
+          mainHtml: registerMainHtml({
+            error: "Username and password are required.",
+          }),
+        })
+      );
     }
 
     const existingUser = await User.findOne({ username });
 
     if (existingUser) {
-      return res.send(`
-        <h2>That username is already taken.</h2>
-        <a href="/auth/register">Try again</a>
-      `);
+      return res.status(400).type("html").send(
+        layoutPage({
+          title: "Register",
+          user: null,
+          mainHtml: registerMainHtml({ error: "That username is already taken." }),
+        })
+      );
     }
 
     const newUser = new User({
       username,
-      password
+      password,
     });
 
     await newUser.save();
 
     req.session.userId = newUser._id.toString();
     req.session.username = newUser.username;
+    appEventBus.publish(AppEvents.USER_SIGNED_IN, {
+      userId: req.session.userId,
+      username: req.session.username,
+      source: "register",
+    });
 
     res.redirect("/home");
   } catch (err) {
@@ -78,43 +64,13 @@ export const register = async (req, res) => {
 };
 
 export const showLoginPage = (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Login</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          max-width: 500px;
-          margin: 40px auto;
-          padding: 20px;
-        }
-        form {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        input, button {
-          padding: 10px;
-          font-size: 16px;
-        }
-        a {
-          text-decoration: none;
-        }
-      </style>
-    </head>
-    <body>
-      <h1>Login</h1>
-      <form method="POST" action="/auth/login">
-        <input type="text" name="username" placeholder="Username" required />
-        <input type="password" name="password" placeholder="Password" required />
-        <button type="submit">Login</button>
-      </form>
-      <p><a href="/auth/register">Need an account? Register</a></p>
-    </body>
-    </html>
-  `);
+  res.type("html").send(
+    layoutPage({
+      title: "Log in",
+      user: null,
+      mainHtml: loginMainHtml({}),
+    })
+  );
 };
 
 export const login = async (req, res) => {
@@ -122,72 +78,52 @@ export const login = async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.send(`
-        <h2>Username and password are required.</h2>
-        <a href="/auth/login">Go back</a>
-      `);
+      return res.status(400).type("html").send(
+        layoutPage({
+          title: "Log in",
+          user: null,
+          mainHtml: loginMainHtml({
+            error: "Username and password are required.",
+          }),
+        })
+      );
     }
 
     const user = await User.findOne({ username });
 
     if (!user) {
-      return res.send(`
-        <h2>Invalid username or password.</h2>
-        <a href="/auth/login">Try again</a>
-      `);
+      return res.status(401).type("html").send(
+        layoutPage({
+          title: "Log in",
+          user: null,
+          mainHtml: loginMainHtml({ error: "Invalid username or password." }),
+        })
+      );
     }
 
     if (user.password !== password) {
-      return res.send(`
-        <h2>Invalid username or password.</h2>
-        <a href="/auth/login">Try again</a>
-      `);
+      return res.status(401).type("html").send(
+        layoutPage({
+          title: "Log in",
+          user: null,
+          mainHtml: loginMainHtml({ error: "Invalid username or password." }),
+        })
+      );
     }
 
     req.session.userId = user._id.toString();
     req.session.username = user.username;
+    appEventBus.publish(AppEvents.USER_SIGNED_IN, {
+      userId: req.session.userId,
+      username: req.session.username,
+      source: "login",
+    });
 
     res.redirect("/home");
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).send("Server error during login.");
   }
-};
-
-export const showHomePage = (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Home</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          max-width: 700px;
-          margin: 40px auto;
-          padding: 20px;
-        }
-        .box {
-          border: 1px solid #ccc;
-          padding: 20px;
-          border-radius: 8px;
-        }
-        a {
-          text-decoration: none;
-          margin-right: 12px;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="box">
-        <h1>Home Page</h1>
-        <p>Welcome, <strong>${req.session.username}</strong>!</p>
-        <p>You are logged in.</p>
-        <a href="/auth/logout">Logout</a>
-      </div>
-    </body>
-    </html>
-  `);
 };
 
 export const logout = (req, res) => {
