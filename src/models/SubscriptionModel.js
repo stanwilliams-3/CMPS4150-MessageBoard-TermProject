@@ -28,4 +28,15 @@ export const SubscriptionModel = {
         const col = await getSubscriptionsCollection();
         await col.deleteOne({ userId, topicId });
     },
+
+    
+    async listTopicIdsForUser(userId) {
+        const col = await getSubscriptionsCollection();
+        const subs = await col
+            .find({ userId })
+            .sort({ subscribedAt: 1 })
+            .project({ topicId: 1 })
+            .toArray();
+        return subs.map((s) => s.topicId);
+    },
 };

@@ -1,4 +1,4 @@
-import { ObjectId } from "mongodb";
+import { DriverObjectId } from "./driverObjectId.js";
 import { DatabaseSingleton } from "./DatabaseSingleton.js";
 
 const dbSingleton = DatabaseSingleton.getInstance();
@@ -21,21 +21,21 @@ async function seed() {
 
   const userDocs = [
     {
-      _id: new ObjectId(),
+      _id: new DriverObjectId(),
       username: "alice",
       email: "alice@example.com",
       password: "passwordnp123",
       createdAt: now(),
     },
     {
-      _id: new ObjectId(),
+      _id: new DriverObjectId(),
       username: "bob",
       email: "bob@example.com",
       password: "password123",
       createdAt: now(),
     },
     {
-      _id: new ObjectId(),
+      _id: new DriverObjectId(),
       username: "carol",
       email: "carol@example.com",
       password: "password123",
@@ -45,19 +45,19 @@ async function seed() {
 
   const topicDocs = [
     {
-      _id: new ObjectId(),
+      _id: new DriverObjectId(),
       title: "General",
       createdBy: userDocs[0]._id,
       createdAt: now(),
     },
     {
-      _id: new ObjectId(),
+      _id: new DriverObjectId(),
       title: "Project ideas",
       createdBy: userDocs[1]._id,
       createdAt: now(),
     },
     {
-      _id: new ObjectId(),
+      _id: new DriverObjectId(),
       title: "Help & support",
       createdBy: userDocs[2]._id,
       createdAt: now(),

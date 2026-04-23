@@ -3,6 +3,8 @@ import { topicController } from "../controllers/topicController.js";
 
 const router = Router();
 
+router.get("/", topicController.list);
+router.get("/:topicId", topicController.show);
 router.post("/", topicController.create);
 
 export default router;

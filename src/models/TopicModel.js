@@ -15,11 +15,29 @@ export const TopicModel = {
             createdBy,
             createdAt: new Date(),
             updatedAt: new Date(),
-            subscribers: [],
+            accessCount: 0,
         };
 
         const result = await col.insertOne(doc);
         return result.insertedId;
+    },
+
+    async findById(topicId) {
+        const col = await getTopicsCollection();
+        return col.findOne({ _id: topicId });
+    },
+
+    async listAll() {
+        const col = await getTopicsCollection();
+        return col.find({}).sort({ title: 1 }).toArray();
+    },
+
+    async incrementAccess(topicId) {
+        const col = await getTopicsCollection();
+        await col.updateOne(
+            { _id: topicId },
+            { $inc: { accessCount: 1 }, $set: { updatedAt: new Date() } }
+        );
     },
 };
 

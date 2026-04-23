@@ -31,4 +31,13 @@ export const MessageModel = {
       .limit(limit);
     return cursor.toArray();
   },
+
+  async listByTopic(topicId, limit = 100) {
+    const col = await getMessagesCollection();
+    const cursor = col
+      .find({ topicId })
+      .sort({ createdAt: 1 })
+      .limit(limit);
+    return cursor.toArray();
+  },
 };
