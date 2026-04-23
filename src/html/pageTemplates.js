@@ -74,7 +74,11 @@ export function topicsMainHtml({ flash, topics }) {
         <div><a href="/topics/${tid}">Open thread</a></div>
         <div>`;
     if (t.isSubscribed) {
-      html += `<span>Subscribed</span>`;
+      html += `<span>Subscribed</span>
+<form method="post" action="/subscriptions/unsubscribe" style="display:inline;">
+  <input type="hidden" name="topicId" value="${tid}">
+  <button type="submit">Unsubscribe</button>
+</form>`;
     } else {
       html += `<form method="post" action="/subscriptions/subscribe" style="display:inline;">
               <input type="hidden" name="topicId" value="${tid}">
@@ -97,6 +101,10 @@ export function topicThreadMainHtml({ topicId, topicTitle, isSubscribed, message
 
   if (isSubscribed) {
     html += `<p>You are subscribed to this topic.</p>
+<form method="post" action="/subscriptions/unsubscribe" style="display:inline;">
+  <input type="hidden" name="topicId" value="${tid}">
+  <button type="submit">Unsubscribe</button>
+</form>
 <form method="post" action="/messages/${tid}">
   <label for="thread-msg">Add a message</label>
   <textarea id="thread-msg" name="body" required maxlength="8000" rows="4"></textarea>
