@@ -19,7 +19,7 @@ export function homeMainHtml({ flash, recentTopics }) {
     return html;
   }
 
-  html += `<h2>Recent topics</h2><ul>`;
+  html += `<h2>Recent topics</h2><ul class="topic-card-list">`;
   for (const topic of topics) {
     const tid = escapeHtml(topic.topicId);
     const ttitle = escapeHtml(topic.topicTitle);
@@ -28,7 +28,7 @@ export function homeMainHtml({ flash, recentTopics }) {
       ? escapeHtml(String(new Date(topic.updatedAt).toLocaleString()))
       : "unknown";
 
-    html += `<li>
+    html += `<li class="topic-card">
       <strong>${ttitle}</strong>
       <div>Topic id: <code>${tid}</code></div>
       <div>Interactions: ${count}</div>
@@ -45,10 +45,10 @@ export function topicsMainHtml({ flash, topics }) {
   let html = `<h1>Topics</h1>
 <p>Subscribe to a topic to see it on your <a href="/">home</a> feed.</p>
 <h2>Create a new topic</h2>
-<form method="post" action="/topics">
+<form class="stack-form" method="post" action="/topics">
   <label for="topic-title">Title</label>
   <input id="topic-title" type="text" name="title" required maxlength="120">
-  <button type="submit">Create topic</button>
+  <button type="submit" class="btn btn--primary">Create topic</button>
 </form>`;
 
   if (flash) {
@@ -63,26 +63,26 @@ export function topicsMainHtml({ flash, topics }) {
     return html;
   }
 
-  html += `<h2>Available topics</h2><ul>`;
+  html += `<h2>Available topics</h2><ul class="topic-card-list">`;
   for (const t of list) {
     const tid = escapeHtml(t.topicId);
     const title = escapeHtml(t.title);
     const accessCount = Number(t.accessCount || 0);
-    html += `<li>
+    html += `<li class="topic-card">
         <strong>${title}</strong>
         <div>Access count: ${accessCount}</div>
         <div><a href="/topics/${tid}">Open thread</a></div>
-        <div>`;
+        <div class="topic-card-actions">`;
     if (t.isSubscribed) {
-      html += `<span>Subscribed</span>
-<form method="post" action="/subscriptions/unsubscribe" style="display:inline;">
+      html += `<span class="badge-subscribed">Subscribed</span>
+<form method="post" action="/subscriptions/unsubscribe">
   <input type="hidden" name="topicId" value="${tid}">
-  <button type="submit">Unsubscribe</button>
+  <button type="submit" class="btn btn--muted btn--sm">Unsubscribe</button>
 </form>`;
     } else {
-      html += `<form method="post" action="/subscriptions/subscribe" style="display:inline;">
+      html += `<form method="post" action="/subscriptions/subscribe">
               <input type="hidden" name="topicId" value="${tid}">
-              <button type="submit">Subscribe</button>
+              <button type="submit" class="btn btn--primary btn--sm">Subscribe</button>
             </form>`;
     }
     html += `</div>
@@ -101,20 +101,22 @@ export function topicThreadMainHtml({ topicId, topicTitle, isSubscribed, message
 
   if (isSubscribed) {
     html += `<p>You are subscribed to this topic.</p>
-<form method="post" action="/subscriptions/unsubscribe" style="display:inline;">
+<div class="topic-card-actions topic-card-actions--bare">
+<form method="post" action="/subscriptions/unsubscribe">
   <input type="hidden" name="topicId" value="${tid}">
-  <button type="submit">Unsubscribe</button>
+  <button type="submit" class="btn btn--muted btn--sm">Unsubscribe</button>
 </form>
-<form method="post" action="/messages/${tid}">
+</div>
+<form class="stack-form" method="post" action="/messages/${tid}">
   <label for="thread-msg">Add a message</label>
   <textarea id="thread-msg" name="body" required maxlength="8000" rows="4"></textarea>
-  <button type="submit">Post message</button>
+  <button type="submit" class="btn btn--primary">Post message</button>
 </form>`;
   } else {
     html += `<p>You are not subscribed to this topic.</p>
 <form method="post" action="/subscriptions/subscribe">
   <input type="hidden" name="topicId" value="${tid}">
-  <button type="submit">Subscribe</button>
+  <button type="submit" class="btn btn--primary">Subscribe</button>
 </form>`;
   }
 
@@ -151,13 +153,13 @@ export function usersListRowsHtml(users) {
     <p>No members registered yet.</p>
   </div>`;
   }
-  let html = `<ul>`;
+  let html = `<ul class="member-card-list">`;
   for (const u of list) {
     const uid = escapeHtml(u.userId);
     const un = escapeHtml(u.username);
-    html += `<li>
+    html += `<li class="member-card">
         <strong>${un}</strong>
-        <a href="/users/${uid}">View</a>
+        <a class="member-card-link" href="/users/${uid}">View profile</a>
       </li>`;
   }
   html += `</ul>`;
@@ -172,13 +174,17 @@ export function userProfileMainHtml({ profile, isSelf }) {
   const uid = escapeHtml(profile.userId);
   const blurb = isSelf ? "This is your account." : "Member profile.";
   return `<h1>${un}</h1>
-  <p>
-    ${blurb}
-    <a href="/users">Back to members</a>
-  </p>
-  <div>
-    <p><strong>Username:</strong> ${un}</p>
-    <p>User id (for links): <code>${uid}</code></p>
+  <div class="profile-grid">
+    <section class="profile-card profile-card--soft" aria-label="About">
+      <h2>About</h2>
+      <p>${blurb}</p>
+      <p><a href="/users">Back to members</a></p>
+    </section>
+    <section class="profile-card profile-card--accent" aria-labelledby="profile-details-title">
+      <h2 id="profile-details-title">Account details</h2>
+      <p><strong>Username:</strong> ${un}</p>
+      <p><strong>User id</strong> (for links): <code>${uid}</code></p>
+    </section>
   </div>`;
 }
 
@@ -188,12 +194,12 @@ export function loginMainHtml({ error }) {
   if (error) {
     html += `<p role="alert">${escapeHtml(error)}</p>`;
   }
-  html += `<form method="post" action="/auth/login">
+  html += `<form class="stack-form" method="post" action="/auth/login">
   <label for="login-username">Username</label>
   <input id="login-username" type="text" name="username" required maxlength="64">
   <label for="login-password">Password</label>
   <input id="login-password" type="password" name="password" required maxlength="128" autocomplete="current-password">
-  <button type="submit">Log in</button>
+  <button type="submit" class="btn btn--primary">Log in</button>
 </form>`;
   return html;
 }
@@ -204,12 +210,12 @@ export function registerMainHtml({ error }) {
   if (error) {
     html += `<p role="alert">${escapeHtml(error)}</p>`;
   }
-  html += `<form method="post" action="/auth/register" autocomplete="off">
+  html += `<form class="stack-form" method="post" action="/auth/register" autocomplete="off">
   <label for="register-username">Username</label>
   <input id="register-username" type="text" name="username" required maxlength="64" autocomplete="username">
   <label for="register-password">Password</label>
   <input id="register-password" type="password" name="password" required maxlength="128" autocomplete="new-password">
-  <button type="submit">Create account</button>
+  <button type="submit" class="btn btn--primary">Create account</button>
 </form>`;
   return html;
 }
