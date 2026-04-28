@@ -13,46 +13,65 @@ import usersRoutes from "./routes/users.routes.js";
 import messagesRoutes from "./routes/messages.routes.js";
 import { registerAppObservers } from "./observers/registerAppObservers.js";
 
+const MONGO_URI = process.env.MONGO_URI?.trim();
+
 const app = express();
 registerAppObservers();
-
-console.log("MONGO_URI =", process.env.MONGO_URI);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.log("MongoDB error:", err));
+async function main() {
+  if (!MONGO_URI) {
+    console.error("Set MONGO_URI in .env (see .env.example if present).");
+    process.exit(1);
+  }
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "secret123",
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URI
-    }),
-    cookie: {
-      secure: false,
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log("MongoDB connected");
+  } catch (err) {
+    console.error("MongoDB connection failed:", err.message);
+    if (err.code === "ECONNREFUSED" && err.syscall === "querySrv") {
+      console.error(
+        "DNS SRV lookup for mongodb+srv was refused. Try: different network/VPN off, set DNS to 8.8.8.8 or 1.1.1.1, or use Atlas’s standard `mongodb://` connection string instead of `mongodb+srv://`."
+      );
     }
-  })
-);
+    process.exit(1);
+  }
 
-app.use("/auth", authRoutes);
-app.use("/subscriptions", subscriptionsRoutes);
-app.use("/topics", topicsRoutes);
-app.use("/users", usersRoutes);
-app.use("/messages", messagesRoutes);
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "secret123",
+      resave: false,
+      saveUninitialized: false,
+      store: MongoStore.create({
+        mongoUrl: MONGO_URI
+      }),
+      cookie: {
+        secure: false,
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24
+      }
+    })
+  );
 
-app.get("/", homeController.showHome);
-app.get("/home", homeController.showHome);
+  app.use("/auth", authRoutes);
+  app.use("/subscriptions", subscriptionsRoutes);
+  app.use("/topics", topicsRoutes);
+  app.use("/users", usersRoutes);
+  app.use("/messages", messagesRoutes);
 
-const PORT = process.env.PORT || 3000;
+  app.get("/", homeController.showHome);
+  app.get("/home", homeController.showHome);
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
 });
